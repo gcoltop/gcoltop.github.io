@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>gcoltop — Monitorización histórica ligera para Linux</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="gcoltop — Monitorización histórica ligera para sistemas Linux. Entiende qué ocurrió en tus sistemas, analiza incidencias y detecta tendencias.">
+    <style>
+        :root {
+            --bg: #050608;
+            --bg-alt: #0b0e12;
+            --card: #11151c;
+            --accent: #3ddc84;
+            --accent-soft: rgba(61, 220, 132, 0.12);
+            --text: #e5e9f0;
+            --muted: #8b93a5;
+            --border: #1f2430;
+            --danger: #ff5370;
+            --mono: "Fira Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--sans);
+            background: radial-gradient(circle at top, #151b26 0, #050608 55%);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, rgba(61, 220, 132, 0.06), transparent);
+        }
+
+        .nav {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: radial-gradient(circle at 30% 20%, #ffffff 0, #3ddc84 35%, #0b0e12 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 17px;
+            color: #050608;
+            box-shadow: 0 0 0 1px rgba(61, 220, 132, 0.5), 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
+
+        .logo-text-main {
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            font-size: 17px;
+        }
+
+        .logo-text-sub {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .pill {
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(139, 147, 165, 0.4);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .hero {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 40px 20px 32px;
+            display: grid;
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2.6fr);
+            gap: 32px;
+        }
+
+        @media (max-width: 880px) {
+            .hero {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .hero-left-eyebrow {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .hero-title {
+            font-size: clamp(30px, 4vw, 38px);
+            line-height: 1.1;
+            margin: 0 0 12px;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            color: var(--muted);
+            max-width: 520px;
+            margin-bottom: 18px;
+        }
+
+        .hero-bullets {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 22px;
+        }
+
+        .hero-bullets span {
+            display: block;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .btn-primary {
+            padding: 9px 18px;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, #3ddc84, #2fb56a);
+            color: #050608;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-ghost {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(11, 14, 18, 0.8);
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .hero-note {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .hero-note strong {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .hero-right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: radial-gradient(circle at top left, rgba(61, 220, 132, 0.16), transparent 55%), var(--card);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            padding: 16px 16px 14px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: var(--muted);
+        }
+
+        .card-badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .card-body {
+            background: #050608;
+            border-radius: 10px;
+            padding: 10px 10px 9px;
+            border: 1px solid #1b202b;
+            overflow: hidden;
+        }
+
+        .term-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .term-prompt {
+            color: #7f848e;
+        }
+
+        .term-cmd {
+            color: #e5e9f0;
+        }
+
+        .term-comment {
+            color: #5c6370;
+        }
+
+        .term-key {
+            color: #61afef;
+        }
+
+        .term-val {
+            color: #98c379;
+        }
+
+        .term-warn {
+            color: var(--danger);
+        }
+
+        .term-dim {
+            color: #4b5263;
+        }
+
+        .section {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 20px 32px;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+            gap: 26px;
+        }
+
+        @media (max-width: 880px) {
+            .section-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin: 0 0 8px;
+        }
+
+        .section-text {
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0 0 10px;
+        }
+
+        .section-list {
+            font-size: 13px;
+            color: var(--muted);
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        .section-list li {
+            margin-bottom: 4px;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: rgba(11, 14, 18, 0.8);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 14px 20px 18px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .footer-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header>
+        <div class="nav">
+            <div class="logo">
+                <div class="logo-mark">gT</div>
+                <div>
+                    <div class="logo-text-main">gcoltop</div>
+                    <div class="logo-text-sub">Linux historical monitoring</div>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="pill">Proyecto en diseño activo</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div>
+                <div class="hero-left-eyebrow">Monitorización histórica ligera para Linux</div>
+                <h1 class="hero-title">Entiende qué ocurrió en tus sistemas.</h1>
+                <p class="hero-subtitle">
+                    gcoltop no se queda en el “ahora”: recoge y conserva información útil en el tiempo
+                    para analizar incidencias, comparar días y detectar tendencias antes de que rompan nada.
+                </p>
+                <div class="hero-bullets">
+                    <span>• Analiza degradaciones intermitentes y ventanas problemáticas</span>
+                    <span>• Compara el comportamiento entre días o semanas</span>
+                    <span>• Detecta crecimientos lentos en CPU, memoria, disco o procesos</span>
+                </div>
+                <div class="hero-cta-row">
+                    <button class="btn-primary" type="button">
+                        Próximamente: primeras builds
+                    </button>
+                    <button class="btn-ghost" type="button">
+                        Diseño de arquitectura y formato de histórico
+                    </button>
+                </div>
+                <div class="hero-note">
+                    Pensado para <strong>servidores Linux</strong>, entornos virtualizados, sistemas <strong>edge</strong> y
+                    dispositivos <strong>ARM / Raspberry Pi</strong>.
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Snapshot histórico — ejemplo conceptual</div>
+                        <div class="card-badge">ligero &amp; local</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="term-line">
+                            <span class="term-prompt">[gcoltop]</span>
+                            <span class="term-cmd"> snapshot 2025-06-24 03:15</span>
+                        </div>
+                        <div class="term-line term-comment"># host: edge-node-07 &nbsp; kernel: linux 6.x</div>
+                        <div class="term-line">
+                            <span class="term-key">cpu</span>:
+                            <span class="term-val">load=3.21 user=72% sys=18% iowait=7%</span>
+                        </div>
+                        <div class="term-line">
+                            <span class="term-key">mem</span>:
+                            <span class="term-val">used=7.8G cache=2.1G swap=0</span>
+                        </div>
+                        <div class="term-line">
+                            <span class="term-key">disk</span>:
+                            <span class="term-val">/data 91% &nbsp;/var 78%</span>
+                        </div>
+                        <div class="term-line">
+                            <span class="term-key">net</span>:
+                            <span class="term-val">eth0 in=220Mbps out=180Mbps</span>
+                        </div>
+                        <div class="term-line">
+                            <span class="term-key">top</span>:
+                            <span class="term-val">postgres, smbd, backup-agent</span>
+                        </div>
+                        <div class="term-line term-comment"># este snapshot se guarda para análisis posterior</div>
+                        <div class="term-line term-dim"># comparar con el mismo intervalo de ayer o la semana pasada</div>
+                        <div class="term-line term-warn"># objetivo: entender “qué pasó” cuando ya es demasiado tarde para mirar top</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-grid">
+                <div>
+                    <h2 class="section-title">Qué es gcoltop</h2>
+                    <p class="section-text">
+                        gcoltop es una herramienta de monitorización histórica ligera para sistemas Linux.
+                        Su objetivo no es solo mostrar el estado actual, sino conservar información útil en el tiempo para:
+                    </p>
+                    <ul class="section-list">
+                        <li>analizar incidencias ya ocurridas</li>
+                        <li>comparar días normales con días problemáticos</li>
+                        <li>estudiar ventanas temporales concretas</li>
+                        <li>detectar crecimientos lentos o sostenidos</li>
+                    </ul>
+                    <p class="section-text">
